@@ -5,13 +5,14 @@ import csv
 import matplotlib
 from tqdm import tqdm
 matplotlib.use('TkAgg')
-from datetime import datetime
+from datetime import datetime, timedelta
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
 from person_image_extractor import person_image_extractor
 from tkinter.ttk import Separator, Style
 from shutil import copyfile
 from yolov3 import yolov3_downloader
+import shutil
 
 def askdirectory(var):
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -148,46 +149,16 @@ def SkiFrameInput(status,name):
     optionFrame.pack()
     return w, var8
 
-    
-def video_merge(var):
-    video_path = var.get()
-    camera_name = os.path.split(video_path)[-1]
-    date = os.path.split(os.path.split(os.path.split(video_path)[0])[0])[-1]
-    video_list=[f for f in os.listdir(video_path) if not f.startswith('.')]
-    if len(video_list) > 1:
-        for video in video_list:
-            label = video.split('.')[0].split('(')[-1].split(')')[0] 
-            if not label.isdigit():
-                index = '1'
-                time = video[-13:-4]
-            else:
-                index = label
-            globals()['video'+index]=VideoFileClip(os.path.join(video_path,video))
-        video_order = []
-        for i in range(len(video_list)):
-            video_order.append(globals()['video'+str(i+1)])
-        final_clip = concatenate_videoclips(video_order)
-        final_clip.write_videofile(os.path.join(os.path.split(video_path)[0],date+'_'+time+'_'+camera_name+".mp4"))
-    else:
-        video = video_list[0]
-        time = video[-13:-4]
-        extention= video.split('.')[-1]
-        src = os.path.join(video_path,video)
-        dst = os.path.join(os.path.split(video_path)[0],date+'_'+time+'_'+camera_name+'.'+extention)
-        copyfile(src,dst)
-    print('Video Merge Complete')
-    
-def video_split(search_dir,save_dir,date,timefile):
+def video_split(search_dir,save_dir,timefile):
     search_dir = search_dir.get()
     save_dir = save_dir.get()
     timefile = timefile.get()
-    date = date.get()
     with open(timefile, newline='') as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
             name = row[0].lower()
-            if not os.path.exists(os.path.join(save_dir,date,name)):
-                os.makedirs(os.path.join(save_dir,date,name))
+            if not os.path.exists(os.path.join(save_dir,name)):
+                os.makedirs(os.path.join(save_dir,name))
             apperance = row[1]
             record_list = row[2:-1]
             for record in record_list:
@@ -195,21 +166,100 @@ def video_split(search_dir,save_dir,date,timefile):
                     record = record[1:]
                 camera_group = record.split(' ')[0]
                 time = record.split(' ')[1]
-                camera_path = os.path.join(search_dir,date,camera_group)
+                camera_path = os.path.join(search_dir,camera_group)
+                print(camera_path)
                 if os.path.exists(camera_path):
-                    print(camera_path)
-                    video_list=[f for f in os.listdir(camera_path) if not f.startswith('.')]
-                    video_list=[f for f in video_list if ('.' in f)]
-                    if len(video_list) > 0:
-                        time_point = datetime.strptime(time, '%H:%M.%S')
-                        for video in video_list:
-                            start_time = video.split('_')[1]
-                            start_time = datetime.strptime(start_time, '%Hh%Mm%Ss')
-                            delta = time_point - start_time
-                            delta = delta.seconds
-                            camera = video.split('.')[0].split('_')[-1]
-                            extention = video.split('.')[-1]
-                            ffmpeg_extract_subclip(os.path.join(camera_path,video), t1=delta-30, t2=delta+30,targetname=os.path.join(save_dir,date,name,name+'_'+date+'_'+camera+'.'+extention))
+                    video_dir_list=[f for f in os.listdir(camera_path) if not f.startswith('.')]
+                    for video_dir in video_dir_list:
+                        temp_dir = os.path.join(camera_path,video_dir)
+                        video_list=[f for f in os.listdir(temp_dir) if not f.startswith('.')]
+                        video_list=[f for f in video_list if ('.' in f)]
+                        video_list.sort()
+                        if len(video_list) > 0:
+                            time_point = datetime.strptime(time, '%H:%M.%S')
+                            time_list = []
+                            for video in video_list:
+                                start_time = video.split('.')[0].split('_')[2].split('-')[0]
+                                time_list.append(start_time)
+                                end_time = video.split('.')[0].split('_')[2].split('-')[1]
+                                time_list.append(end_time)
+
+                            for i in range(len(video_list)):
+                                start_time = time_list[i*2]
+                                start_time = datetime.strptime(start_time, '%Hh%Mm%Ss')
+
+                                end_time = time_list[i*2+1]
+                                end_time = datetime.strptime(end_time, '%Hh%Mm%Ss')
+
+                                delta = 30
+
+                                d = timedelta(seconds=delta)
+
+                                clip_start = time_point - d
+                                clip_end = time_point + d
+
+                                start_checker = clip_start - start_time
+                                end_checker = end_time - clip_end
+                                third_checker = end_time - clip_start
+
+
+                                if start_checker.days == 0 and end_checker.days == 0:
+                                    camera = video.split('.')[0].split('_')[0]
+                                    extention = video.split('.')[-1]
+                                    date = video.split('_')[1]
+                                    ffmpeg_extract_subclip(os.path.join(temp_dir,video_list[i]), t1=start_checker.seconds, t2=start_checker.seconds+2*delta,targetname=os.path.join(save_dir,name,camera+'_'+date+'_'+str(time_point.hour)+'h'+str(time_point.minute)+'m'+str(time_point.second)+'s'+'_'+name+'.'+extention))
+                                else:
+                                    end_checker2 = clip_end - start_time
+                                    if start_checker.days == -1 and end_checker2.days == 0:
+                                        if i == 0:
+                                            camera = video.split('.')[0].split('_')[0]
+                                            extention = video.split('.')[-1]
+                                            date = video.split('_')[1]
+                                            ffmpeg_extract_subclip(os.path.join(temp_dir,video_list[i]), t1=0, t2=end_checker2.seconds,targetname=os.path.join(save_dir,name,camera+'_'+date+'_'+str(time_point.hour)+'h'+str(time_point.minute)+'m'+str(time_point.second)+'s'+'_'+name+'.'+extention))
+                                        else:
+                                            print(end_checker2)
+                                            end_time2 = time_list[(i-1)*2+1]
+                                            end_time2 = datetime.strptime(end_time2, '%Hh%Mm%Ss')
+                                            start_checker3 = end_time2 - clip_start
+                                            if start_checker3.days == -1:
+                                                ffmpeg_extract_subclip(os.path.join(temp_dir,video_list[i]), t1=0, t2=end_checker2.seconds,targetname=os.path.join(save_dir,name,camera+'_'+date+'_'+str(time_point.hour)+'h'+str(time_point.minute)+'m'+str(time_point.second)+'s'+'_'+name+'.'+extention))
+                                    elif start_checker.days == 0 and end_checker.days == -1:
+                                        if third_checker.days == 0:
+                                            if i == (len(video_list)-1):
+                                                total_time = end_time - start_time
+                                                camera = video.split('.')[0].split('_')[0]
+                                                extention = video.split('.')[-1]
+                                                date = video.split('_')[1]
+                                                ffmpeg_extract_subclip(os.path.join(temp_dir,video_list[i]), t1=start_checker.seconds, t2=total_time.seconds,targetname=os.path.join(save_dir,name,camera+'_'+date+'_'+str(time_point.hour)+'h'+str(time_point.minute)+'m'+str(time_point.second)+'s'+'_'+name+'.'+extention))
+                                            else:
+                                                start_time2 = time_list[(i+1)*2]
+                                                start_time2 = datetime.strptime(start_time2, '%Hh%Mm%Ss')
+                                                end_checker2 = clip_end - start_time2
+                                                if end_checker2.days == 0:
+                                                    temp_save=os.path.join(save_dir,'temp')
+                                                    if not os.path.isdir(temp_save):
+                                                        os.mkdir(temp_save)
+
+                                                    camera = video.split('.')[0].split('_')[0]
+                                                    extention = video.split('.')[-1]
+                                                    date = video.split('_')[1]
+
+                                                    total_time = end_time - start_time
+                                                    ffmpeg_extract_subclip(os.path.join(temp_dir,video_list[i]), t1=start_checker.seconds, t2=total_time.seconds,targetname=os.path.join(temp_save,'temp1.'+extention))
+                                                    ffmpeg_extract_subclip(os.path.join(temp_dir,video_list[i+1]), t1=0, t2=end_checker2.seconds,targetname=os.path.join(temp_save,'temp2.'+extention))
+                                                    v1 = VideoFileClip(os.path.join(temp_save,'temp1.'+extention))
+                                                    v2 = VideoFileClip(os.path.join(temp_save,'temp2.'+extention))
+                                                    final_clip = concatenate_videoclips([v1,v2])
+                                                    print(os.path.join(save_dir,camera+'_'+date+'_'+time+'_'+name+'.'+extention))
+                                                    final_clip.write_videofile(os.path.join(save_dir,name,camera+'_'+date+'_'+str(time_point.hour)+'h'+str(time_point.minute)+'m'+str(time_point.second)+'s'+'_'+name+'.mp4'))
+                                                    shutil.rmtree(temp_save)
+                                                else:
+                                                    total_time = end_time - start_time
+                                                    camera = video.split('.')[0].split('_')[0]
+                                                    extention = video.split('.')[-1]
+                                                    date = video.split('_')[1]
+                                                    ffmpeg_extract_subclip(os.path.join(temp_dir,video_list[i]), t1=start_checker.seconds, t2=total_time.seconds,targetname=os.path.join(save_dir,name,camera+'_'+date+'_'+str(time_point.hour)+'h'+str(time_point.minute)+'m'+str(time_point.second)+'s'+'_'+name+'.'+extention))
+                                       
     print('Video Split Complete')
 
 def image_extraction(input_folder,save_path,skipFrame):
@@ -238,10 +288,6 @@ if __name__ == '__main__':
     TitleLabel.config(font=("Courier", 22))
     TitleLabel.pack()
     
-    w1, var1 = VideoDirInput("", "Video Folder")
-    mergeBut = Button(window, text='Merge', command = lambda: video_merge(var1))
-    mergeBut.pack()
-    
     l1 = Canvas(window, width=700, height=10)
     l1.pack()
     l1.create_line(0, 6, 700, 6)
@@ -249,8 +295,7 @@ if __name__ == '__main__':
     w4, search_dir, = SearchDirInput("", "Search Folder")
     w3, save_dir = SaveDirInput("", "Save Folder")
     w2, timefile = TimeFileInput("", "Time CSV File")
-    w5, date = DateInput("07-17-1", "Date")
-    timeBut = Button(window, text='Split', command = lambda: video_split(search_dir,save_dir,date,timefile))
+    timeBut = Button(window, text='Split', command = lambda: video_split(search_dir,save_dir,timefile))
     timeBut.pack()
     
     l2 = Canvas(window, width=700, height=10)
