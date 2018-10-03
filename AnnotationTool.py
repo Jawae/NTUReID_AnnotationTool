@@ -319,44 +319,48 @@ TitleLabel.pack()
 # btn0 = tkinter.Button(window, text="Open CSV File", command=csv_path)
 # btn0.pack()
 
-ent1 = tkinter.Entry(window)
+frm = tkinter.Frame(window)
+frm.pack()
+frm_l = tkinter.Frame(frm)
+frm_m = tkinter.Frame(frm)
+frm_r = tkinter.Frame(frm)
+frm_l.pack(side='left')
+frm_m.pack(side='left')
+frm_r.pack(side='right')
+
+ent1 = tkinter.Entry(frm_l)
 ent1.pack()
-btn1 = tkinter.Button(window, text="Open Person Path", command=browse)
+btn1 = tkinter.Button(frm_l, text="Open Person Path", command=browse)
 btn1.pack()
-tkinter.Label(window,text='Image Size').pack()
-ent3 = tkinter.Entry(window,width = 3)
+tkinter.Label(frm_l,text='Image Size').pack()
+ent3 = tkinter.Entry(frm_l,width = 3)
 ent3.pack()
 ent3.insert(20, '128')
+
+NameLabel = Label(frm_m, text='Name: None')
+NameLabel.pack()
+ULabel = Label(frm_m, text='Upper : None')
+ULabel.pack()
+LLabel = Label(frm_m, text='Lower : None')
+LLabel.pack()
+AccessLabel = Label(frm_m, text='Accessory: None')
+AccessLabel.pack()
+
+ent2 = tkinter.Entry(frm_r)
+ent2.pack()
+btn2 = tkinter.Button(frm_r, text="Select Save Path", command=save_path)
+btn2.pack()
+btn3 = tkinter.Button(frm_r, text="Save", command=test)
+btn3.pack()
 
 l1 = Canvas(window, width=700, height=10)
 l1.pack()
 l1.create_line(0, 6, 700, 6)
 
-ent2 = tkinter.Entry(window)
-ent2.pack()
-btn2 = tkinter.Button(window, text="Select Save Path", command=save_path)
-btn2.pack()
 
 
-btn3 = tkinter.Button(window, text="Save", command=test)
-btn3.pack()
-
-l2 = Canvas(window, width=700, height=10)
-l2.pack()
-l2.create_line(0, 6, 700, 6)
 
 
-NameLabel = Label(window, text='Name: None')
-NameLabel.pack()
-
-ULabel = Label(window, text='Upper : None')
-ULabel.pack()
-
-LLabel = Label(window, text='Lower : None')
-LLabel.pack()
-
-AccessLabel = Label(window, text='Accessory: None')
-AccessLabel.pack()
 
 frame = tkinter.Frame()
 frame.pack(fill="both", expand=True)
