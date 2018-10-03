@@ -218,22 +218,24 @@ def browse():
     filez = tkinter.filedialog.askdirectory(parent=window, title='Open Person Folder',initialdir=dir_path)
     ent1.insert(20, filez)
     
-    timefile = ent0.get()
-    with open(timefile, newline='') as csvfile:
+    csv_dir = os.path.abspath(os.path.join(filez, os.pardir))
+    csv_path = os.path.join(csv_dir,[f for f in os.listdir(csv_dir) if f.split('.')[-1].lower()=='csv'][0])
+    with open(csv_path, newline='') as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
-            name = row[0].lower()
+            name = row[0]+'-'+row[1].lower()
             if name == os.path.split(filez)[-1]:
                 target_name = name
-                u_color = row[1].split('_')[0]
-                l_color = row[1].split('_')[1]
-                gender = row[1].split('_')[2]
-                accessory = row[1].split('_')[3]
+                u_color = row[2].split('_')[0]
+                l_color = row[2].split('_')[1]
+                u_type = row[2].split('_')[2]
+                l_type = row[2].split('_')[3]
+                gender = row[2].split('_')[4]
+                accessory = row[2].split('_')[5]
 
-                NameLabel.config(text='Name:'+target_name)
-                GenderLabel.config(text='Gender:'+gender)
-                UColorLabel.config(text='Upper Color:'+u_color)
-                LColorLabel.config(text='Lower Color:'+l_color)
+                NameLabel.config(text='Name:'+target_name + '('+gender+')')
+                ULabel.config(text='Upper :'+u_color +' '+u_type)
+                LLabel.config(text='Lower :'+l_color+' '+l_type)
                 AccessLabel.config(text='Accessory:'+accessory)
 
     cams = [d for d in os.listdir(filez) if not d.startswith('.')]
@@ -280,10 +282,10 @@ def save_path():
     filez = tkinter.filedialog.askdirectory(parent=window, title='Select Save Folder',initialdir=dir_path)
     ent2.insert(20, filez)
 
-def csv_path():
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    filez = tkinter.filedialog.askopenfilename(parent=window, title='Select CSV File',initialdir=dir_path)
-    ent0.insert(20, filez)
+# def csv_path():
+#     dir_path = os.path.dirname(os.path.realpath(__file__))
+#     filez = tkinter.filedialog.askopenfilename(parent=window, title='Select CSV File',initialdir=dir_path)
+#     ent0.insert(20, filez)
 
 def test():
     for key, value in intvar_dict.items():
@@ -312,19 +314,19 @@ TitleLabel = Label(window, text='NTU-ReID Annotation Tool')
 TitleLabel.config(font=("Courier", 22))
 TitleLabel.pack()
 
-ent0 = tkinter.Entry(window)
-ent0.pack()
-btn0 = tkinter.Button(window, text="Open CSV File", command=csv_path)
-btn0.pack()
+# ent0 = tkinter.Entry(window)
+# ent0.pack()
+# btn0 = tkinter.Button(window, text="Open CSV File", command=csv_path)
+# btn0.pack()
 
-tkinter.Label(window,text='Image Size').pack()
-ent3 = tkinter.Entry(window,width = 3)
-ent3.pack()
-ent3.insert(20, '128')
 ent1 = tkinter.Entry(window)
 ent1.pack()
 btn1 = tkinter.Button(window, text="Open Person Path", command=browse)
 btn1.pack()
+tkinter.Label(window,text='Image Size').pack()
+ent3 = tkinter.Entry(window,width = 3)
+ent3.pack()
+ent3.insert(20, '128')
 
 l1 = Canvas(window, width=700, height=10)
 l1.pack()
@@ -347,14 +349,11 @@ l2.create_line(0, 6, 700, 6)
 NameLabel = Label(window, text='Name: None')
 NameLabel.pack()
 
-GenderLabel = Label(window, text='Gender: None')
-GenderLabel.pack()
+ULabel = Label(window, text='Upper : None')
+ULabel.pack()
 
-UColorLabel = Label(window, text='Upper Color: None')
-UColorLabel.pack()
-
-LColorLabel = Label(window, text='Lower Color: None')
-LColorLabel.pack()
+LLabel = Label(window, text='Lower : None')
+LLabel.pack()
 
 AccessLabel = Label(window, text='Accessory: None')
 AccessLabel.pack()

@@ -13,6 +13,7 @@ from tkinter.ttk import Separator, Style
 from shutil import copyfile
 from yolov3 import yolov3_downloader
 import shutil
+from shutil import copyfile
 
 def askdirectory(var):
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -153,14 +154,17 @@ def video_split(search_dir,save_dir,timefile):
     search_dir = search_dir.get()
     save_dir = save_dir.get()
     timefile = timefile.get()
+    copyfile(timefile, os.path.join(save_dir,os.path.basename(timefile)))
     with open(timefile, newline='') as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
-            name = row[0].lower()
+            id = row[0]
+            name = row[1].lower()
+            name = id+'-'+name
             if not os.path.exists(os.path.join(save_dir,name)):
                 os.makedirs(os.path.join(save_dir,name))
-            apperance = row[1]
-            record_list = row[2:-1]
+            apperance = row[2]
+            record_list = row[3:-1]
             for record in record_list:
                 if record[0] == ' ':
                     record = record[1:]
@@ -178,6 +182,7 @@ def video_split(search_dir,save_dir,timefile):
                         if len(video_list) > 0:
                             time_point = datetime.strptime(time, '%H:%M.%S')
                             time_list = []
+                            # print(video_list)
                             for video in video_list:
                                 start_time = video.split('.')[0].split('_')[2].split('-')[0]
                                 time_list.append(start_time)
@@ -238,7 +243,7 @@ def video_split(search_dir,save_dir,timefile):
                                                 if end_checker2.days == 0:
                                                     temp_save=os.path.join(save_dir,'temp')
                                                     if not os.path.isdir(temp_save):
-                                                        os.mkdir(temp_save)
+                                                        os.makedirs(temp_save)
 
                                                     camera = video.split('.')[0].split('_')[0]
                                                     extention = video.split('.')[-1]
@@ -268,8 +273,8 @@ def image_extraction(input_folder,save_path,skipFrame):
     save_path = save_path.get()
     skipFrame = int(skipFrame.get())
     show_video=False
-    person_dir=[d for d in os.listdir(input_folder) if os.path.isdir(input_folder)]
-    person_dir=[d for d in os.listdir(input_folder) if not d.startswith('.')]
+    person_dir=[d for d in os.listdir(input_folder) if (os.path.isdir(os.path.join(input_folder, d)) and (not d.startswith('.')))]
+    print(person_dir)
     
     for person_name in tqdm(person_dir):
         video_list = [f for f in os.listdir(os.path.join(input_folder,person_name)) if not f.startswith('.')]
@@ -278,11 +283,13 @@ def image_extraction(input_folder,save_path,skipFrame):
             save_video = os.path.join(save_path,person_name,video.split('.')[0])
             person_image_extractor(video_file=video_file,save_path=save_video,skipFrame=skipFrame,show_video=show_video)
     print('Image Extraction Complete')
+    csv=[f for f in os.listdir(input_folder) if f.split('.')[-1].lower()=='csv'][0]
+    copyfile(os.path.join(input_folder,csv), os.path.join(save_path,csv))
     
 if __name__ == '__main__':
     window = Tk()
     window.title('NTU-ReID Video Tool')
-    window.geometry('700x400')
+    window.geometry('700x300')
     
     TitleLabel = Label(window, text='NTU-ReID Video Tool')
     TitleLabel.config(font=("Courier", 22))
@@ -293,8 +300,8 @@ if __name__ == '__main__':
     l1.create_line(0, 6, 700, 6)
     
     w4, search_dir, = SearchDirInput("", "Search Folder")
-    w3, save_dir = SaveDirInput("", "Save Folder")
     w2, timefile = TimeFileInput("", "Time CSV File")
+    w3, save_dir = SaveDirInput("", "Save Folder")
     timeBut = Button(window, text='Split', command = lambda: video_split(search_dir,save_dir,timefile))
     timeBut.pack()
     
@@ -304,7 +311,7 @@ if __name__ == '__main__':
 
     w6, input_folder = PersonVideoInput("", "Extracted Video Folder")
     w7, save_path = SaveImageInput("", "Image Save Folder")
-    w8, skipFrame = DateInput("90", "Skip Frame")
+    w8, skipFrame = DateInput("30", "Skip Frame")
     extractBut = Button(window, text='Image Extraction', command = lambda: image_extraction(input_folder,save_path,skipFrame))
     extractBut.pack()
     
