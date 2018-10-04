@@ -30,13 +30,17 @@ def preprocess(orig_img, dim):
 
 def mark_classes_saveinstances(x,orig_img,id_,i,save_path,class_names,padding,show_video):
     r = padding
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
+
+    video_name = os.path.split(save_path)[-1]
+    camera = video_name.split('_')[0]
+    image_path = os.path.join(os.path.split(save_path)[0],camera)
+    if not os.path.exists(image_path):
+        os.makedirs(image_path)
     label = class_names[int(x[-1])]
     if label=="person":
         if id_%3==0:
             cropped = orig_img[x[2].int()-r:x[4].int()+r,x[1].int()-r:x[3].int()+r]
-            cv2.imwrite(os.path.join(save_path,str(id_)+'_'+str(i)+".jpg"),cropped)
+            cv2.imwrite(os.path.join(image_path,video_name+'_'+str(id_)+'_'+str(i)+".jpg"),cropped)
         if show_video:
             cv2.rectangle(orig_img,tuple(x[1:3].int()),tuple(x[3:5].int()),(0,255,0))
             font_sz = cv2.getTextSize(label, cv2.FONT_HERSHEY_PLAIN, 1 , 1)[0]  
@@ -46,7 +50,7 @@ def mark_classes_saveinstances(x,orig_img,id_,i,save_path,class_names,padding,sh
             cv2.putText(orig_img,label,(x[1].int(),txtcorner[1]), cv2.FONT_HERSHEY_PLAIN,1,(255,255,255))
 
 
-def person_image_extractor(video_file,save_path,show_video=False,skipFrame=90,padding=10):
+def person_image_extractor(video_file,save_path,show_video=False,skipFrame=30,padding=10):
     confthres = 0.65
     nmsthres = 0.4
 
@@ -79,6 +83,7 @@ def person_image_extractor(video_file,save_path,show_video=False,skipFrame=90,pa
     YOLO.eval()
 
     cap = cv2.VideoCapture(video_file)
+    print(video_file)
     assert cap.isOpened(), 'Cannot open source'
 
     currFrame=0
