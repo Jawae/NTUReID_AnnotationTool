@@ -171,7 +171,7 @@ def video_split(search_dir,save_dir):
                 camera_group = record.split(' ')[0]
                 time_list = record.split(' ')[1:]
                 if len(time_list)>2:
-                    time_list = [time_list[0],time_list[-1]]
+                    time_list = [time_list[0],time_list[-2]]
                 else:
                     time_list = time_list[0:1]
                 camera_path = os.path.join(search_dir,camera_group)

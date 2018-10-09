@@ -287,7 +287,7 @@ def save_path():
 #     filez = tkinter.filedialog.askopenfilename(parent=window, title='Select CSV File',initialdir=dir_path)
 #     ent0.insert(20, filez)
 
-def test():
+def save():
     for key, value in intvar_dict.items():
         if value.get() > 0:
             path = key.split('/')[-4:]
@@ -350,7 +350,7 @@ ent2 = tkinter.Entry(frm_r)
 ent2.pack()
 btn2 = tkinter.Button(frm_r, text="Select Save Path", command=save_path)
 btn2.pack()
-btn3 = tkinter.Button(frm_r, text="Save", command=test)
+btn3 = tkinter.Button(frm_r, text="Save", command=save)
 btn3.pack()
 
 l1 = Canvas(window, width=700, height=10)
